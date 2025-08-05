@@ -1,21 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./App.css";
 
 function App() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [verse, setVerse] = useState<Verse[]>([]);
   const [currentMessage, setCurrentMessage] = useState("");
+  const [chat, setChat] = useState<ChatItem[]>([]);
+  const bottomRef = useRef<HTMLDivElement>(null); // nak manipulate <div> in this case, nak scroll to bottom
 
-  type Message = {
-    sender: "user" | "bot";
-    text: string;
-    link? : string,
+  type ChatItem =
+    | { type: "message"; sender: "user" | "bot"; text: string }
+    | { type: "verse"; arab: string; english: string; link:string };
+
+  const handleKeyDown = (e: any) => {
+    if (e.key === "Enter") {
+      handleSend();
+    }
   };
 
-  type Verse = {
-    arab: string,
-    english: string,
-  }
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chat]); //handle scroll bila chat tukar "state"
 
   const handleSend = async () => {
     const messageToSend = currentMessage.trim();
@@ -23,12 +26,11 @@ function App() {
 
     setCurrentMessage("");
 
-    // Add user's message to chat
-    setMessages((prev) => [...prev, { sender: "user", text: messageToSend }]); //[..prev] -> spread/copy all previous the messages
-    console.log(
-      "All messages so far:",
-      messages.map((msg, i) => `${msg.sender} ${msg.text}`) // i is for key
-    );
+    // Add user's message
+    setChat((prev) => [
+      ...prev,
+      { type: "message", sender: "user", text: messageToSend },
+    ]);
 
     try {
       const response = await fetch("http://localhost:3000/send", {
@@ -39,20 +41,39 @@ function App() {
         body: JSON.stringify({ message: messageToSend }),
       });
 
-      const {comfortingMessage, verseLinks } = await response.json();
+      const { comfortingMessage, verseLinks } = await response.json();
 
-      // Add bot's response to chat
-      setMessages((prev) => [
+      // Add bot's text response
+      setChat((prev) => [
         ...prev,
-        { sender: "bot", text: comfortingMessage },]);
+        { type: "message", sender: "bot", text: comfortingMessage },
+      ]);
 
-      verseLinks.forEach((verse:string) => {
+      // Add each verse
+      verseLinks.map((verse:string) => {
         console.log("Verse",verse);
+
+        fetch(verse)
+        .then(response => response.json())
+        .then(ayahData => {
+          const ayah = ayahData;
+          console.log("Arab", ayah.arabic1);
+          console.log("English", ayah.english);
+
+          setChat((prev) => [
+            ...prev,
+            {
+              type: "verse",
+              arab: ayahData.arabic1,
+              english: ayahData.english,
+              link: `https://quran.com/${ayahData.surahNo}:${ayahData.ayahNo}`,
+            },
+          ]);
+
+          // (prev) => [...prev, {..}]); basically takes the old array and adds the new element to it
+        })
+
       });
-
-
-      console.log("Links",messages.map((msg) => `${msg.sender} ${msg.text} ${msg.link}`)); // i is for key
-
     } catch (e) {
       console.error("Error sending request:", e);
     }
@@ -71,8 +92,7 @@ function App() {
         </p>
       </div>
 
-      {/* Center - App Card */}
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl flex flex-col gap-6 p-8">
+      <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl flex flex-col gap-6 p-8">
         {/* Header */}
         <div className="text-center">
           <h1 className="text-4xl font-extrabold text-blue-800 flex items-center justify-center gap-2 mb-2">
@@ -83,28 +103,43 @@ function App() {
           </h2>
         </div>
 
-        {/* Chat Window */}
-        <div className="bg-gray-100 rounded-2xl p-5 h-[400px] overflow-y-auto flex flex-col gap-4 shadow-inner">
-          {/* Opening Message */}
+        <div className="bg-gray-100 rounded-2xl p-5 h-[400px] overflow-y-auto flex flex-col gap-4 shadow-inner hide-scrollbar">
           <div className="self-start bg-blue-100 text-blue-900 p-4 rounded-2xl rounded-bl-sm w-fit max-w-[75%] shadow-md">
             How are you feeling?
           </div>
 
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`p-4 rounded-2xl w-fit max-w-[75%] shadow-md break-words ${
-                msg.sender === "user"
-                  ? "self-end bg-amber-100 text-gray-900 rounded-br-sm" // right side for user
-                  : "self-start bg-blue-100 text-blue-900 rounded-bl-sm" // left side for bot
-              }`}
-            >
-              {msg.text}
-            </div>
-          ))}
+          {chat.map((item, index) => {
+            if (item.type === "message") {
+              return (
+                <div
+                  key={index}
+                  className={`p-4 rounded-2xl w-fit max-w-[75%] shadow-md break-words ${
+                    item.sender === "user"
+                      ? "self-end bg-amber-100 text-gray-900 rounded-br-sm"
+                      : "self-start bg-blue-100 text-blue-900 rounded-bl-sm"
+                  }`}
+                >
+                  {item.text}
+                </div>
+              );
+            } else if (item.type === "verse") {
+              return (
+                <div
+                  key={index}
+                  onClick={() => window.open(item.link, "_blank")}
+                  className="self-start bg-blue-100 text-blue-900 hover:bg-blue-200 w-fit rounded-2xl p-4 shadow-md"
+                >
+                  <p className="arabic font-serif text-lg">{item.arab}</p>
+                  <p className="translation text-sm mt-2">{item.english}</p>
+                </div>
+              );
+            }
+          })}
+
+          {/* Scroll to bottom */}
+          <div ref={bottomRef} />
         </div>
 
-        {/* Input Section */}
         <div className="flex items-center gap-3 mt-2">
           <input
             type="text"
@@ -112,6 +147,7 @@ function App() {
             className="flex-grow px-4 py-2 rounded-xl border border-gray-300 bg-amber-100 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150"
             value={currentMessage}
             onChange={(e) => setCurrentMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
           <button
             className="bg-blue-600 text-white px-5 py-2 rounded-xl hover:bg-blue-700 transition duration-200"
@@ -122,7 +158,6 @@ function App() {
         </div>
       </div>
 
-      {/* Right Side - Bonus Quote */}
       <div className="hidden md:flex w-1/4 pl-10 text-center text-blue-700 text-3xl font-bold italic leading-relaxed">
         <p>
           “Verily, with hardship comes ease.”

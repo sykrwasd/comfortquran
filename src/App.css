@@ -12,3 +12,33 @@ body{
   align-items: center;
  
 }
+
+.arabic {
+  font-family: "Scheherazade New", serif;
+  font-size: 22px;
+  direction: rtl;
+  text-align: right;
+  line-height: 1.5;
+  padding: 10px;
+}
+
+.translation {
+  font-family: "Merriweather", serif;
+  font-weight: 200;
+  font-size: 15px;
+  color: #444;
+  line-height: 1.6;
+  padding: 10px
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.hide-scrollbar {
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+

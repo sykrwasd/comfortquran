@@ -34,7 +34,7 @@ app.post("/send", async (req, res) => {
     messages: [
       {
         role: "system",
-        content: `You are a ustaz. Based on the user's emotional message, first return a comforting message to calm them. Then, return exactly 3 Quran verses relevant to their feelings. Return the result in the following JSON format:
+        content: `You are a ustaz. Based on the user's emotional message, first return a comforting message to calm them. Then, return exactly 3 Quran verses relevant to their feelings.add something like "here some verse to calm your heart". Return the result in the following JSON format:
 
 {
   "message": "Add your comforting message here",
@@ -54,29 +54,29 @@ app.post("/send", async (req, res) => {
   });
 
   const response = summary.choices[0].message.content;
-  console.log("Response:", response);
+  //console.log("Response:", response);
  
   try{
 
     const parsed = JSON.parse(response);
-    console.log("Parsed",parsed);
+    //console.log("Parsed",parsed);
 
      const { message: comfortingMessage, verses } = parsed;
     
      const verseLinks = [verses.verse1, verses.verse2, verses.verse3];
-     console.log("Verse Links:", verseLinks);
-     console.log("Comforting Message:", comfortingMessage);
+     //console.log("Verse Links:", verseLinks);
+     //console.log("Comforting Message:", comfortingMessage);
 
-     verseLinks.map(verse => {
+    //  verseLinks.map(verse => {
 
-      fetch(verse).then(response=> response.json())
-      .then(ayahData =>{
-        const ayah = ayahData
-        console.log("Arabic:", ayah.arabic1);
-        console.log("English:", ayah.english);
-      })
+    //   fetch(verse).then(response=> response.json())
+    //   .then(ayahData =>{
+    //     const ayah = ayahData
+    //     console.log("Arabic:", ayah.arabic1);
+    //     console.log("English:", ayah.english);
+    //   })
 
-     })
+    //  })
      
      res.status(200).json({ comfortingMessage, verseLinks });
 
