@@ -23,4 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
+#environment variables
+.env
+
+#JSON
+*.json
+json/
+
 .env
