@@ -67,7 +67,8 @@ function App() {
               arab: ayahData.arabic1,
               english: ayahData.english,
               link: `https://quran.com/${ayahData.surahNo}:${ayahData.ayahNo}`,
-            },
+            },//
+            
           ]);
 
           // (prev) => [...prev, {..}]); basically takes the old array and adds the new element to it
